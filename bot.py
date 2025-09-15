@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 # ---------------- CONFIG ----------------
 BOT_TOKEN = "8350446980:AAFvDRRnEQQ5kb_37Zss-LJAwBx6CdhLous"
 BACKUP_CHANNEL_ID = -1002066954690   # replace with backup channel ID
-MAIN_CHANNEL_ID = "@helloeveryone1227"    # replace with main channel ID
+MAIN_CHANNEL_ID = -1002999138018   # replace with main channel ID
 
 # ---------------- LOGGING ----------------
 logging.basicConfig(
