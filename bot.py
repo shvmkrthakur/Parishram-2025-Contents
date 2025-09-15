@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# ---------------- START HANDLER ----------------
+# ---------------- /start COMMAND HANDLER ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Usage: /start <video_id>\nExample: /start 4")
@@ -30,36 +30,37 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"✅ Please send me the custom thumbnail image for video ID {video_id} now."
     )
 
-# ---------------- HANDLE THUMBNAIL ----------------
+# ---------------- HANDLE THUMBNAIL IMAGE ----------------
 async def handle_thumbnail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     video_id = context.user_data.get('video_id')
+    user_id = update.effective_user.id
 
     if not video_id:
         await update.message.reply_text("⚠️ Please send the /start command first with a video ID.")
         return
 
     if update.message.photo:
-        # Get highest quality photo
         photo = update.message.photo[-1]
 
-        # Download thumbnail image
-        thumbnail_path = f"thumb_{update.effective_user.id}_{video_id}.jpg"
+        thumbnail_path = f"thumb_{user_id}_{video_id}.jpg"
         await photo.get_file().download_to_drive(thumbnail_path)
 
-        user_thumbnail[update.effective_user.id] = thumbnail_path
+        user_thumbnail[user_id] = thumbnail_path
 
-        await update.message.reply_text(f"✅ Custom thumbnail received. Forwarding video now...")
+        await update.message.reply_text(f"✅ Custom thumbnail received. Forwarding video now, please wait...")
 
-        # Send video with custom thumbnail
         await send_video_with_custom_thumb(update, context, video_id, thumbnail_path)
 
     else:
         await update.message.reply_text("⚠️ Please send an image (photo) as the thumbnail.")
 
-# ---------------- SEND VIDEO WITH CUSTOM THUMBNAIL ----------------
+# ---------------- FORWARD VIDEO WITH CUSTOM THUMBNAIL ----------------
 async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEFAULT_TYPE, video_id: int, thumb_path: str):
     try:
-        # Temporarily forward the message to get file_id
+        # Inform user that forwarding has started
+        await update.message.reply_text(f"⏳ Forwarding video ID {video_id}, please wait...")
+
+        # Forward the message temporarily to get file_id
         msg = await context.bot.forward_message(
             chat_id=update.effective_chat.id,
             from_chat_id=BACKUP_CHANNEL_ID,
@@ -69,7 +70,6 @@ async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEF
         if msg.video:
             file_id = msg.video.file_id
 
-            # Send video to main channel with custom thumbnail
             await context.bot.send_video(
                 chat_id=MAIN_CHANNEL_ID,
                 video=file_id,
@@ -83,12 +83,12 @@ async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEF
             except:
                 pass
 
-            # Cleanup: delete thumbnail file
+            # Cleanup: remove thumbnail file
             os.remove(thumb_path)
             user_thumbnail.pop(update.effective_user.id, None)
 
-            # ✅ Success message
-            await update.message.reply_text(f"✅ Video ID {video_id} forwarded successfully with custom thumbnail.")
+            # Final confirmation to user
+            await update.message.reply_text(f"✅ Video ID {video_id} has been forwarded successfully with your custom thumbnail.")
 
         else:
             await update.message.reply_text(f"❌ Message ID {video_id} is not a video.")
@@ -97,7 +97,7 @@ async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEF
         logging.error(f"Error forwarding video {video_id}: {e}")
         await update.message.reply_text(f"❌ Failed to forward video {video_id}: {e}")
 
-# ---------------- MAIN ----------------
+# ---------------- MAIN FUNCTION ----------------
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
