@@ -50,16 +50,17 @@ async def handle_thumbnail(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(f"✅ Custom thumbnail received. Forwarding video now, please wait...")
 
-        await send_video_with_custom_thumb(update, context, video_id, thumbnail_path)
+        await send_video_auto_thumbnail(update, context, video_id)
 
     else:
         await update.message.reply_text("⚠️ Please send an image (photo) as the thumbnail.")
 
-# ---------------- FORWARD VIDEO WITH CUSTOM THUMBNAIL ----------------
-async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEFAULT_TYPE, video_id: int, thumb_path: str):
+# ---------------- SEND VIDEO WITH AUTO-GENERATED THUMBNAIL ----------------
+async def send_video_auto_thumbnail(update: Update, context: ContextTypes.DEFAULT_TYPE, video_id: int):
     try:
-        await update.message.reply_text(f"⏳ Forwarding video ID {video_id}, please wait...")
+        await update.message.reply_text(f"⏳ Downloading video ID {video_id}, please wait...")
 
+        # Step 1: Forward video temporarily
         msg = await context.bot.forward_message(
             chat_id=update.effective_chat.id,
             from_chat_id=BACKUP_CHANNEL_ID,
@@ -68,23 +69,32 @@ async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEF
 
         if msg.video:
             file_id = msg.video.file_id
+            file = await context.bot.get_file(file_id)
 
+            video_path = f"video_{video_id}.mp4"
+            await file.download_to_drive(custom_path=video_path)
+
+            await update.message.reply_text(f"✅ Video downloaded. Uploading without custom thumbnail now...")
+
+            # Step 2: Send video WITHOUT custom thumbnail (auto-generated)
             await context.bot.send_video(
                 chat_id=MAIN_CHANNEL_ID,
-                video=file_id,
-                caption=msg.caption or "",
-                thumb=open(thumb_path, 'rb')
+                video=open(video_path, 'rb'),
+                caption=msg.caption or ""
             )
 
+            # Cleanup
             try:
                 await msg.delete()
             except:
                 pass
 
-            os.remove(thumb_path)
-            user_thumbnail.pop(update.effective_user.id, None)
+            os.remove(video_path)
+            thumb_path = user_thumbnail.pop(update.effective_user.id, None)
+            if thumb_path and os.path.exists(thumb_path):
+                os.remove(thumb_path)
 
-            await update.message.reply_text(f"✅ Video ID {video_id} has been forwarded successfully with your custom thumbnail.")
+            await update.message.reply_text(f"✅ Video ID {video_id} forwarded successfully with auto-generated thumbnail.")
 
         else:
             await update.message.reply_text(f"❌ Message ID {video_id} is not a video.")
