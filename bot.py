@@ -4,6 +4,7 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+# ---------------- CONFIG ----------------
 BOT_TOKEN = "8350446980:AAFvDRRnEQQ5kb_37Zss-LJAwBx6CdhLous"
 BACKUP_CHANNEL_ID = "@biologylectures1_0"   # replace with backup channel ID
 MAIN_CHANNEL_ID = -1002999138018   # replace with main channel ID
@@ -42,7 +43,8 @@ async def handle_thumbnail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         photo = update.message.photo[-1]
 
         thumbnail_path = f"thumb_{user_id}_{video_id}.jpg"
-        await photo.get_file().download(custom_path=thumbnail_path)
+        file = await photo.get_file()
+        await file.download_to_drive(custom_path=thumbnail_path)
 
         user_thumbnail[user_id] = thumbnail_path
 
