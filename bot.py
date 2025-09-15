@@ -7,15 +7,13 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 BOT_TOKEN = "8350446980:AAFvDRRnEQQ5kb_37Zss-LJAwBx6CdhLous"
 BACKUP_CHANNEL_ID = "@biologylectures1_0"   # replace with backup channel ID
 MAIN_CHANNEL_ID = -1002999138018   # replace with main channel ID
-      # main channel ID (numeric)
-
 # ---------------- LOGGING ----------------
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 
-# ---------------- HANDLER ----------------
+# ---------------- START HANDLER ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Usage: /start <id> or /start <id1>-<id2>")
@@ -47,7 +45,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------- FORWARD FUNCTION ----------------
 async def forward_video(update: Update, context: ContextTypes.DEFAULT_TYPE, msg_id: int):
     try:
-        # Fetch the original message
+        # Step 1: Fetch the message directly (no download)
         msg = await context.bot.forward_message(
             chat_id=update.effective_chat.id,
             from_chat_id=BACKUP_CHANNEL_ID,
@@ -55,13 +53,23 @@ async def forward_video(update: Update, context: ContextTypes.DEFAULT_TYPE, msg_
         )
 
         if msg.video:
-            # Re-send video using its file_id (no download, no custom thumbnail)
+            file_id = msg.video.file_id
+
+            # Step 2: Send video using file_id (auto thumbnail, no custom one)
             await context.bot.send_video(
                 chat_id=MAIN_CHANNEL_ID,
-                video=msg.video.file_id,
-                caption=msg.caption or "",
-                thumbnail=None
+                video=file_id,
+                caption=msg.caption or ""
             )
+
+            # Step 3: Delete the temp forward
+            try:
+                await msg.delete()
+            except:
+                pass
+
+            await update.message.reply_text(f"✅ Forwarded video {msg_id} (up to 2 GB supported)")
+
         else:
             await update.message.reply_text(f"Message {msg_id} is not a video ❌")
 
