@@ -4,7 +4,6 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# ---------------- CONFIG ----------------
 BOT_TOKEN = "8350446980:AAFvDRRnEQQ5kb_37Zss-LJAwBx6CdhLous"
 BACKUP_CHANNEL_ID = "@biologylectures1_0"   # replace with backup channel ID
 MAIN_CHANNEL_ID = -1002999138018   # replace with main channel ID
@@ -43,7 +42,7 @@ async def handle_thumbnail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         photo = update.message.photo[-1]
 
         thumbnail_path = f"thumb_{user_id}_{video_id}.jpg"
-        await photo.get_file().download_to_drive(thumbnail_path)
+        await photo.get_file().download(custom_path=thumbnail_path)
 
         user_thumbnail[user_id] = thumbnail_path
 
@@ -57,10 +56,8 @@ async def handle_thumbnail(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------- FORWARD VIDEO WITH CUSTOM THUMBNAIL ----------------
 async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEFAULT_TYPE, video_id: int, thumb_path: str):
     try:
-        # Inform user that forwarding has started
         await update.message.reply_text(f"⏳ Forwarding video ID {video_id}, please wait...")
 
-        # Forward the message temporarily to get file_id
         msg = await context.bot.forward_message(
             chat_id=update.effective_chat.id,
             from_chat_id=BACKUP_CHANNEL_ID,
@@ -77,17 +74,14 @@ async def send_video_with_custom_thumb(update: Update, context: ContextTypes.DEF
                 thumb=open(thumb_path, 'rb')
             )
 
-            # Cleanup: delete temp forwarded message
             try:
                 await msg.delete()
             except:
                 pass
 
-            # Cleanup: remove thumbnail file
             os.remove(thumb_path)
             user_thumbnail.pop(update.effective_user.id, None)
 
-            # Final confirmation to user
             await update.message.reply_text(f"✅ Video ID {video_id} has been forwarded successfully with your custom thumbnail.")
 
         else:
