@@ -532,7 +532,7 @@ async def redeem_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_ss_upi_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.message.reply_text("📤 Please send *first* screenshot now.", parse_mode='Markdown')
+    await query.message.reply_text("📤 Please send *first* screenshot now. \n\n Warning :- Send proper screenshot of bot task if you send wrong screen shot you will be kicked from instahub group", parse_mode='Markdown')
 
 async def ss_upi_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -553,7 +553,7 @@ async def ss_upi_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sub["photos"].append(file_id)
         sub["state"] = "awaiting_upi"
         TEMP_SUBMISSIONS[str(user_id)] = sub
-        await update.message.reply_text("✅ Second screenshot received. Now send your *UPI ID* as plain text.", parse_mode='Markdown')
+        await update.message.reply_text("✅ Second screenshot received. Now send your *UPI ID* as plain text. If you don't have any upi id enter your telegram username or phone number admin will contact you.", parse_mode='Markdown')
         return
     if sub["state"] == "awaiting_upi":
         await update.message.reply_text("⚠️ Already got 2 screenshots, now send UPI text.")
@@ -609,7 +609,7 @@ async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(target_user, "🎉 Approved! ✅ You now have 24h access.")
         except:
             pass
-        await query.edit_message_caption(caption="✅ Approved by admin.")
+        await query.edit_message_caption(caption="✅ Approved by admin. Rs 1 is sent to your upi.")
     elif data.startswith("reject_"):
         # remove temporary verification
         if str(target_user) in VERIFIED_CACHE:
